@@ -1,0 +1,233 @@
+package edu.liberty.andrewwerner.iplverification.view;
+
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import edu.liberty.andrewwerner.iplverification.model.IEvent;
+import edu.liberty.andrewwerner.iplverification.model.ITeam;
+import edu.liberty.andrewwerner.iplverification.model.VerificationStatus;
+import edu.liberty.andrewwerner.iplverification.presenter.IEventPresenter;
+import edu.liberty.andrewwerner.iplverification.presenter.IPresenter;
+
+import javax.swing.*;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.text.StyleContext;
+import java.awt.*;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.util.ArrayList;
+import java.util.Locale;
+
+/**
+ * Class EventView
+ * Generates and maintains the GUI for the event page.
+ *
+ * @author Andrew Werner
+ */
+public final class EventView implements IEventView {
+    private JLabel eventName;
+    private JLabel eventDate;
+    private JLabel eventTeamCount;
+    private JButton importEventButton;
+    private JLabel importResponse;
+    private JScrollPane resultsPanel;
+    private JTextField searchField;
+    private JButton updateFiltersButton;
+    private JComboBox<VerificationStatus> verifStatusDropdown;
+    private JPanel contentPanel;
+    private JLabel eventURL;
+    private JButton goToSearchButton;
+
+    private IEventPresenter presenter;
+    private final IWidgetFactory factory;
+    private IEvent event;
+    private URLHandler urlHandler;
+
+    private static final String PLACEHOLDER_TEXT = "Search by team name...";
+
+    /**
+     * Creates an object of class EventView
+     * @param factory the widget factory to use for making widgets.
+     */
+    public EventView(IWidgetFactory factory) {
+        this.factory = factory;
+        this.presenter = null;
+        this.event = null;
+
+        // One-time loads
+        this.searchField.setForeground(Color.GRAY);
+        this.searchField.setText(PLACEHOLDER_TEXT);
+        this.verifStatusDropdown.addItem(null);
+        for (VerificationStatus status : VerificationStatus.values()) {
+            this.verifStatusDropdown.addItem(status);
+        }
+        this.verifStatusDropdown.setSelectedIndex(0);
+
+        // Event listeners
+        this.searchField.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (searchField.getText().equals(PLACEHOLDER_TEXT)) {
+                    searchField.setText("");
+                    searchField.setForeground(Color.BLACK);
+                }
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (searchField.getText().isEmpty()) {
+                    searchField.setForeground(Color.GRAY);
+                    searchField.setText(PLACEHOLDER_TEXT);
+                }
+            }
+        });
+
+        this.goToSearchButton.addActionListener(e -> this.presenter.changeView(IPresenter.PID.Search));
+        this.updateFiltersButton.addActionListener(e ->
+                this.presenter.updateFilters(this.event, this.getFilters(false)));
+    }
+
+    @Override
+    public void setPresenter(IEventPresenter presenter) {
+        if (this.presenter != null) {
+            throw new IllegalStateException("Event Presenter already set!");
+        }
+
+        this.presenter = presenter;
+    }
+
+    @Override
+    public IEventFilterOptions getFilters(boolean reset) {
+        if (reset) {
+            this.verifStatusDropdown.setSelectedItem(null);
+            this.searchField.setText(PLACEHOLDER_TEXT);
+        }
+
+        String query = this.searchField.getText();
+        if (query.equals(PLACEHOLDER_TEXT)) {
+            query = "";
+        }
+
+        return new EventFilterOptions(query, this.verifStatusDropdown.getItemAt(
+                this.verifStatusDropdown.getSelectedIndex()));
+    }
+
+    @Override
+    public void updateView(IEvent event, ArrayList<ITeam> teams) {
+        this.event = event;
+        this.eventName.setText(event.getName());
+        this.eventDate.setText(event.getStartDateString());
+        this.eventTeamCount.setText(event.getNumTeams() + " Teams Registered");
+        if (this.urlHandler == null) {
+            this.urlHandler = new URLHandler(this.eventURL, event.getBracketSiteURL());
+        } else {
+            this.urlHandler.updateLabel(event.getBracketSiteURL());
+        }
+
+        // Disable stubbed API system
+        this.importEventButton.setEnabled(false);
+        this.importResponse.setText("Updating of events is not available.");
+
+        JPanel wrapper = this.factory.buildWidgets(this.presenter, teams, false);
+        this.resultsPanel.setViewportView(wrapper);
+        this.resultsPanel.getVerticalScrollBar().setUnitIncrement(10);
+    }
+
+    @Override
+    public JPanel getContentPanel() {
+        return this.contentPanel;
+    }
+
+    {
+// GUI initializer generated by IntelliJ IDEA GUI Designer
+// >>> IMPORTANT!! <<<
+// DO NOT EDIT OR ADD ANY CODE HERE!
+        $$$setupUI$$$();
+    }
+
+    /**
+     * Method generated by IntelliJ IDEA GUI Designer
+     * >>> IMPORTANT!! <<<
+     * DO NOT edit this method OR call it in your code!
+     *
+     * @noinspection ALL
+     */
+    private void $$$setupUI$$$() {
+        contentPanel = new JPanel();
+        contentPanel.setLayout(new GridLayoutManager(9, 2, new Insets(10, 10, 10, 10), -1, -1));
+        eventName = new JLabel();
+        Font eventNameFont = this.$$$getFont$$$(null, Font.BOLD, 16, eventName.getFont());
+        if (eventNameFont != null) eventName.setFont(eventNameFont);
+        eventName.setText("[Event Name]");
+        contentPanel.add(eventName, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        eventDate = new JLabel();
+        eventDate.setText("[January 1st, 1900 at 12:00 AM]");
+        contentPanel.add(eventDate, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        eventTeamCount = new JLabel();
+        eventTeamCount.setText("[0 Teams Registered]");
+        contentPanel.add(eventTeamCount, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        importResponse = new JLabel();
+        importResponse.setText("");
+        contentPanel.add(importResponse, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        importEventButton = new JButton();
+        importEventButton.setText("Import and Update Teams");
+        contentPanel.add(importEventButton, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        resultsPanel = new JScrollPane();
+        contentPanel.add(resultsPanel, new GridConstraints(8, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JPanel panel1 = new JPanel();
+        panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        resultsPanel.setViewportView(panel1);
+        final JLabel label1 = new JLabel();
+        label1.setText("Loading, Please Wait...");
+        panel1.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        searchField = new JTextField();
+        contentPanel.add(searchField, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        updateFiltersButton = new JButton();
+        updateFiltersButton.setText("Update Filters");
+        contentPanel.add(updateFiltersButton, new GridConstraints(6, 1, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        verifStatusDropdown = new JComboBox();
+        contentPanel.add(verifStatusDropdown, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        eventURL = new JLabel();
+        eventURL.setForeground(new Color(-16777216));
+        eventURL.setOpaque(false);
+        eventURL.setText("[EVENT URL]");
+        contentPanel.add(eventURL, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        goToSearchButton = new JButton();
+        goToSearchButton.setText("Back to Main Menu");
+        contentPanel.add(goToSearchButton, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label2 = new JLabel();
+        label2.setText("Registered Teams");
+        contentPanel.add(label2, new GridConstraints(5, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JSeparator separator1 = new JSeparator();
+        contentPanel.add(separator1, new GridConstraints(4, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    private Font $$$getFont$$$(String fontName, int style, int size, Font currentFont) {
+        if (currentFont == null) return null;
+        String resultName;
+        if (fontName == null) {
+            resultName = currentFont.getName();
+        } else {
+            Font testFont = new Font(fontName, Font.PLAIN, 10);
+            if (testFont.canDisplay('a') && testFont.canDisplay('1')) {
+                resultName = fontName;
+            } else {
+                resultName = currentFont.getName();
+            }
+        }
+        Font font = new Font(resultName, style >= 0 ? style : currentFont.getStyle(), size >= 0 ? size : currentFont.getSize());
+        boolean isMac = System.getProperty("os.name", "").toLowerCase(Locale.ENGLISH).startsWith("mac");
+        Font fontWithFallback = isMac ? new Font(font.getFamily(), font.getStyle(), font.getSize()) : new StyleContext().getFont(font.getFamily(), font.getStyle(), font.getSize());
+        return fontWithFallback instanceof FontUIResource ? fontWithFallback : new FontUIResource(fontWithFallback);
+    }
+
+    /**
+     * @noinspection ALL
+     */
+    public JComponent $$$getRootComponent$$$() {
+        return contentPanel;
+    }
+
+}
